@@ -177,6 +177,151 @@ namespace CouplersOverhaulMod
     //    }
     //}
 
+    [HarmonyPatch(typeof(Coupler), "CoupleTo")]
+    class Coupler_CoupleTo_Patch
+    {
+        static void Postfix(Coupler __instance)
+        {
+            __instance.GetComponent<CouplerCustom>().Coupled();
+        }
+    }
+
+    [HarmonyPatch(typeof(Coupler), "Uncouple")]
+    class Coupler_Uncouple_Patch
+    {
+        static void Postfix(Coupler __instance)
+        {
+            __instance.GetComponent<CouplerCustom>().Uncoupled();
+        }
+    }
+
+    [HarmonyPatch(typeof(Coupler), "Start")]
+    class Coupler_Start_Patch
+    {
+        static void Prefix(Coupler __instance)
+        {
+            var position = __instance.transform.localPosition;
+
+            float coef = 0.37f;
+
+            if (__instance.train.carType == TrainCarType.LocoShunter)
+            {
+                coef = 0.3f;
+            }
+
+            if ((__instance.train.carType == TrainCarType.LocoSteamHeavy || __instance.train.carType == TrainCarType.LocoSteamHeavyBlue) &&
+                __instance.train.rearCoupler.Equals(__instance))
+            {
+                coef -= 0.8f;
+            }
+
+            if ((__instance.train.carType == TrainCarType.Tender || __instance.train.carType == TrainCarType.TenderBlue) &&
+                __instance.train.frontCoupler.Equals(__instance))
+            {
+                coef -= 0.7f;
+            }
+
+            if (__instance.train.frontCoupler.Equals(__instance))
+            {
+                position.z -= coef;
+            }
+            else
+            {
+                position.z += coef;
+            }
+
+            __instance.transform.localPosition = position;
+
+            __instance.gameObject.AddComponent<CouplerCustom>();
+
+            //GameObject go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            //go.transform.parent = __instance.transform;
+            //go.transform.localPosition = Vector3.zero;
+            //go.transform.localScale *= 0.25f;
+
+            //if (__instance.train.frontCoupler.Equals(__instance))
+            //{
+            //    go.GetComponent<Renderer>().material.color = new Color(1, 0, 0, 1);
+            //}
+        }
+    }
+
+    [HarmonyPatch(typeof(Coupler), "CreateJoint")]
+    class Coupler_CreateJoint_Patch
+    {
+        static void Postfix(Coupler __instance, ref ConfigurableJoint __result)
+        {
+            SoftJointLimit softJointLimit = new SoftJointLimit();
+
+            __result.angularXMotion = ConfigurableJointMotion.Free;
+            __result.angularYMotion = ConfigurableJointMotion.Free;
+            __result.angularZMotion = ConfigurableJointMotion.Free;
+
+            if (__instance.train.carType == TrainCarType.LocoSteamHeavy && __instance.coupledTo.train.carType == TrainCarType.Tender ||
+                __instance.train.carType == TrainCarType.Tender && __instance.coupledTo.train.carType == TrainCarType.LocoSteamHeavy)
+            {
+                softJointLimit.limit = 0.05f;
+            }
+            else
+            {
+                softJointLimit.limit = 0.25f;
+            }
+            __result.linearLimit = softJointLimit;
+            softJointLimit.limit = -90f;
+            __result.lowAngularXLimit = softJointLimit;
+            softJointLimit.limit = 90f;
+            __result.highAngularXLimit = softJointLimit;
+            __result.angularYLimit = softJointLimit;
+            __result.angularZLimit = softJointLimit;
+            __result.enableCollision = false;
+            __result.breakForce = 1E+12f;
+            //}
+        }
+    }
+
+    [HarmonyPatch(typeof(DecouplerDeviceLogic))]
+    [HarmonyPatch("Couple")]
+    public class DecouplerDeviceLogic_Couple_Patcher
+    {
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            var code = new List<CodeInstruction>(instructions);
+
+            for (int i = 0; i < code.Count - 1; i++)
+            {
+                if (code[i].opcode == OpCodes.Ldc_R4 && code[i].operand is float f && f >= 0.99f && f < 1.01f)
+                {
+                    code[i].operand = 0.3f;
+                }
+            }
+
+            return code;
+        }
+    }
+
+    //[HarmonyPatch(typeof(TrainCar), "Start")]
+    //class TrainCar_Start_Patch
+    //{
+    //    static void Postfix(TrainCar __instance)
+    //    {
+    //        Transform buffers;
+
+    //        if (__instance.carType == TrainCarType.LocoShunter)
+    //        {
+    //            buffers = __instance.transform.Find("shunter_ext");
+    //        }
+    //        else
+    //        {
+    //            buffers = __instance.transform.Find("Buffers");
+    //        }
+
+    //        if (buffers != null)
+    //        {
+    //            Utility.buffers.Add(buffers);
+    //        }
+    //    }
+    //}
+
     class CouplerCustom : MonoBehaviour
     {
         Coupler coupler;
@@ -385,108 +530,6 @@ namespace CouplersOverhaulMod
         }
     }
 
-    [HarmonyPatch(typeof(Coupler), "CoupleTo")]
-    class Coupler_CoupleTo_Patch
-    {
-        static void Postfix(Coupler __instance)
-        {
-            __instance.GetComponent<CouplerCustom>().Coupled();
-        }
-    }
-
-    [HarmonyPatch(typeof(Coupler), "Uncouple")]
-    class Coupler_Uncouple_Patch
-    {
-        static void Postfix(Coupler __instance)
-        {
-            __instance.GetComponent<CouplerCustom>().Uncoupled();
-        }
-    }
-
-    [HarmonyPatch(typeof(Coupler), "Start")]
-    class Coupler_Start_Patch
-    {
-        static void Prefix(Coupler __instance)
-        {
-            var position = __instance.transform.localPosition;
-
-            float coef = 0.37f;
-
-            if (__instance.train.carType == TrainCarType.LocoShunter)
-            {
-                coef = 0.3f;
-            }
-
-            if ((__instance.train.carType == TrainCarType.LocoSteamHeavy || __instance.train.carType == TrainCarType.LocoSteamHeavyBlue) &&
-                __instance.train.rearCoupler.Equals(__instance))
-            {
-                coef -= 0.8f;
-            }
-
-            if ((__instance.train.carType == TrainCarType.Tender || __instance.train.carType == TrainCarType.TenderBlue) &&
-                __instance.train.frontCoupler.Equals(__instance))
-            {
-                coef -= 0.7f;
-            }
-
-            if (__instance.train.frontCoupler.Equals(__instance))
-            {
-                position.z -= coef;
-            }
-            else
-            {
-                position.z += coef;
-            }
-
-            __instance.transform.localPosition = position;
-
-            __instance.gameObject.AddComponent<CouplerCustom>();
-
-            //GameObject go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            //go.transform.parent = __instance.transform;
-            //go.transform.localPosition = Vector3.zero;
-            //go.transform.localScale *= 0.25f;
-
-            //if (__instance.train.frontCoupler.Equals(__instance))
-            //{
-            //    go.GetComponent<Renderer>().material.color = new Color(1, 0, 0, 1);
-            //}
-        }
-    }
-
-    [HarmonyPatch(typeof(Coupler), "CreateJoint")]
-    class Coupler_CreateJoint_Patch
-    {
-        static void Postfix(Coupler __instance, ref ConfigurableJoint __result)
-        {
-            SoftJointLimit softJointLimit = new SoftJointLimit();
-
-            __result.angularXMotion = ConfigurableJointMotion.Free;
-            __result.angularYMotion = ConfigurableJointMotion.Free;
-            __result.angularZMotion = ConfigurableJointMotion.Free;
-
-            if (__instance.train.carType == TrainCarType.LocoSteamHeavy && __instance.coupledTo.train.carType == TrainCarType.Tender ||
-                __instance.train.carType == TrainCarType.Tender && __instance.coupledTo.train.carType == TrainCarType.LocoSteamHeavy)
-            {
-                softJointLimit.limit = 0.05f;
-            }
-            else
-            {
-                softJointLimit.limit = 0.25f;
-            }
-            __result.linearLimit = softJointLimit;
-            softJointLimit.limit = -90f;
-            __result.lowAngularXLimit = softJointLimit;
-            softJointLimit.limit = 90f;
-            __result.highAngularXLimit = softJointLimit;
-            __result.angularYLimit = softJointLimit;
-            __result.angularZLimit = softJointLimit;
-            __result.enableCollision = false;
-            __result.breakForce = 1E+12f;
-            //}
-        }
-    }
-
     class Utility
     {
         public static List<Transform> buffers;
@@ -509,29 +552,6 @@ namespace CouplersOverhaulMod
 
                     ListChildren(child, indent + 4);
                 }
-            }
-        }
-    }
-
-    [HarmonyPatch(typeof(TrainCar), "Start")]
-    class TrainCar_Start_Patch
-    {
-        static void Postfix(TrainCar __instance)
-        {
-            Transform buffers;
-
-            if (__instance.carType == TrainCarType.LocoShunter)
-            {
-                buffers = __instance.transform.Find("shunter_ext");
-            }
-            else
-            {
-                buffers = __instance.transform.Find("Buffers");
-            }
-
-            if (buffers != null)
-            {
-                Utility.buffers.Add(buffers);
             }
         }
     }
