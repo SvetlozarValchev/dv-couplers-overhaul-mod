@@ -109,7 +109,7 @@ namespace CouplersOverhaulMod
                     var boxCollider = componentsInChildren[i];
                     var boxColliderSize = boxCollider.size;
 
-                    boxColliderSize.z = boxColliderSize.z - 0.4f;
+                    boxColliderSize.z = boxColliderSize.z - 0.3f;
                     boxCollider.size = boxColliderSize;
                 }
             }
