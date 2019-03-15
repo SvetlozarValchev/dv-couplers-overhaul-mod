@@ -55,19 +55,19 @@ namespace CouplersOverhaulMod
             trainCarLength.Add(TrainCarType.TankYellow, 7.22f);
             trainCarLength.Add(TrainCarType.TankChrome, 7.22f);
 
-            trainCarLength.Add(TrainCarType.BoxcarBrown, 7.09f);
-            trainCarLength.Add(TrainCarType.BoxcarGreen, 7.09f);
-            trainCarLength.Add(TrainCarType.BoxcarPink, 7.09f);
-            trainCarLength.Add(TrainCarType.BoxcarRed, 7.09f);
+            trainCarLength.Add(TrainCarType.BoxcarBrown, 7.076f);
+            trainCarLength.Add(TrainCarType.BoxcarGreen, 7.076f);
+            trainCarLength.Add(TrainCarType.BoxcarPink, 7.076f);
+            trainCarLength.Add(TrainCarType.BoxcarRed, 7.076f);
 
-            trainCarLength.Add(TrainCarType.HopperBrown, 9.0f);
-            trainCarLength.Add(TrainCarType.HopperTeal, 9.0f);
-            trainCarLength.Add(TrainCarType.HopperYellow, 9.0f);
+            trainCarLength.Add(TrainCarType.HopperBrown, 8.975f);
+            trainCarLength.Add(TrainCarType.HopperTeal, 8.975f);
+            trainCarLength.Add(TrainCarType.HopperYellow, 8.975f);
 
             trainCarLength.Add(TrainCarType.FlatbedEmpty, 9.0f);
             trainCarLength.Add(TrainCarType.FlatbedStakes, 9.0f);
 
-            trainCarLength.Add(TrainCarType.RefrigeratorWhite, 7.07f);
+            trainCarLength.Add(TrainCarType.RefrigeratorWhite, 7.06f);
 
             trainCarLength.Add(TrainCarType.LocoShunter, 3.72f);
 
@@ -78,6 +78,12 @@ namespace CouplersOverhaulMod
         static void FillTrainCarCenterOffsets()
         {
             trainCarCenterOffset.Add(TrainCarType.LocoShunter, 0.01f);
+            trainCarCenterOffset.Add(TrainCarType.RefrigeratorWhite, 0.03f);
+
+            trainCarCenterOffset.Add(TrainCarType.BoxcarBrown, 0.04f);
+            trainCarCenterOffset.Add(TrainCarType.BoxcarGreen, 0.04f);
+            trainCarCenterOffset.Add(TrainCarType.BoxcarPink, 0.04f);
+            trainCarCenterOffset.Add(TrainCarType.BoxcarRed, 0.04f);
         }
 
         static void ReduceTrainCarBoxSize()
@@ -132,54 +138,54 @@ namespace CouplersOverhaulMod
         }
     }
 
-    [HarmonyPatch(typeof(YardTracksOrganizer), "GetSeparationLengthBetweenCars")]
-    class YardTracksOrganizer_GetSeparationLengthBetweenCars_Patch
-    {
-        static void Postfix(ref float __result, int numOfCars)
-        {
-            __result = 0.01f * (float)(numOfCars + 1);
-        }
-    }
+    //[HarmonyPatch(typeof(YardTracksOrganizer), "GetSeparationLengthBetweenCars")]
+    //class YardTracksOrganizer_GetSeparationLengthBetweenCars_Patch
+    //{
+    //    static void Postfix(ref float __result, int numOfCars)
+    //    {
+    //        __result = 0.01f * (float)(numOfCars + 1);
+    //    }
+    //}
 
-    [HarmonyPatch(typeof(CarSpawner))]
-    [HarmonyPatch("SpawnCarTypesOnTrack")]
-    public class CarSpawner_SpawnCarTypesOnTrack_Patcher
-    {
-        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-        {
-            var code = new List<CodeInstruction>(instructions);
+    //[HarmonyPatch(typeof(CarSpawner))]
+    //[HarmonyPatch("SpawnCarTypesOnTrack")]
+    //public class CarSpawner_SpawnCarTypesOnTrack_Patcher
+    //{
+    //    static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+    //    {
+    //        var code = new List<CodeInstruction>(instructions);
 
-            for (int i = 0; i < code.Count - 1; i++)
-            {
-                if (code[i].opcode == OpCodes.Ldc_R8 && code[i].operand is double f && f >= 0.3 && f < 0.31)
-                {
-                    code[i].operand = (double)0.01f;
-                }
-            }
+    //        for (int i = 0; i < code.Count - 1; i++)
+    //        {
+    //            if (code[i].opcode == OpCodes.Ldc_R8 && code[i].operand is double f && f >= 0.3 && f < 0.31)
+    //            {
+    //                code[i].operand = (double)0.01f;
+    //            }
+    //        }
 
-            return code;
-        }
-    }
+    //        return code;
+    //    }
+    //}
 
-    [HarmonyPatch(typeof(CarSpawner))]
-    [HarmonyPatch("GetUninitializedSpawnData")]
-    public class CarSpawner_GetUninitializedSpawnData_Patcher
-    {
-        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-        {
-            var code = new List<CodeInstruction>(instructions);
+    //[HarmonyPatch(typeof(CarSpawner))]
+    //[HarmonyPatch("GetUninitializedSpawnData")]
+    //public class CarSpawner_GetUninitializedSpawnData_Patcher
+    //{
+    //    static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+    //    {
+    //        var code = new List<CodeInstruction>(instructions);
 
-            for (int i = 0; i < code.Count - 1; i++)
-            {
-                if (code[i].opcode == OpCodes.Ldc_R4 && code[i].operand is float f && f >= 0.01f && f < 0.11f)
-                {
-                    code[i].operand = 0.01f;
-                }
-            }
+    //        for (int i = 0; i < code.Count - 1; i++)
+    //        {
+    //            if (code[i].opcode == OpCodes.Ldc_R4 && code[i].operand is float f && f >= 0.01f && f < 0.11f)
+    //            {
+    //                code[i].operand = 0.01f;
+    //            }
+    //        }
 
-            return code;
-        }
-    }
+    //        return code;
+    //    }
+    //}
 
     [HarmonyPatch(typeof(Coupler), "CoupleTo")]
     class Coupler_CoupleTo_Patch
