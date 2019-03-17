@@ -8,26 +8,34 @@ using System.Reflection.Emit;
 
 namespace CouplersOverhaulMod
 {
+    public struct TrainCarBoundsCorrection
+    {
+        public float size;
+        public float center;
+
+        public TrainCarBoundsCorrection(float size = 0f, float center = 0f)
+        {
+            this.size = size;
+            this.center = center;
+        }
+    }
+
     public class Main
     {
         public static Dictionary<TrainCarType, float[]> bufferDistanceDictionary = new Dictionary<TrainCarType, float[]>();
-        public static Dictionary<TrainCarType, float> trainCarLength = new Dictionary<TrainCarType, float>();
-        public static Dictionary<TrainCarType, float> trainCarCenterOffset = new Dictionary<TrainCarType, float>();
+        public static Dictionary<TrainCarType, TrainCarBoundsCorrection> trainCarBounds = new Dictionary<TrainCarType, TrainCarBoundsCorrection>();
 
         static bool Load(UnityModManager.ModEntry modEntry)
         {
             var harmony = HarmonyInstance.Create(modEntry.Info.Id);
             harmony.PatchAll(Assembly.GetExecutingAssembly());
 
-            FillBufferDistances();
-            FillTrainCarLengths();
-            FillTrainCarCenterOffsets();
-            ReduceTrainCarBoxSize();
+            FillDictionaries();
 
             return true;
         }
 
-        static void FillBufferDistances()
+        static void FillDictionaries()
         {
             bufferDistanceDictionary.Add(TrainCarType.PassengerRed, new float[] { 0.05f, 0.05f });
             bufferDistanceDictionary.Add(TrainCarType.PassengerGreen, new float[] { 0.05f, 0.05f });
@@ -37,155 +45,104 @@ namespace CouplersOverhaulMod
             bufferDistanceDictionary.Add(TrainCarType.BoxcarGreen, new float[] { 0.05f, 0.05f });
             bufferDistanceDictionary.Add(TrainCarType.BoxcarBrown, new float[] { 0.05f, 0.05f });
             bufferDistanceDictionary.Add(TrainCarType.RefrigeratorWhite, new float[] { 0.05f, 0.05f });
-        }
 
-        static void FillTrainCarLengths()
-        {
-            trainCarLength.Add(TrainCarType.AutorackRed, 8.95f);
-            trainCarLength.Add(TrainCarType.AutorackBlue, 8.95f);
-            trainCarLength.Add(TrainCarType.AutorackGreen, 8.95f);
-            trainCarLength.Add(TrainCarType.AutorackYellow, 8.95f);
+            trainCarBounds.Add(TrainCarType.PassengerRed, new TrainCarBoundsCorrection(-0.5f, 0f));
+            trainCarBounds.Add(TrainCarType.PassengerGreen, new TrainCarBoundsCorrection(-0.5f, 0f));
+            trainCarBounds.Add(TrainCarType.PassengerBlue, new TrainCarBoundsCorrection(-0.5f, 0f));
 
-            trainCarLength.Add(TrainCarType.PassengerRed, 12.35f);
-            trainCarLength.Add(TrainCarType.PassengerGreen, 12.35f);
-            trainCarLength.Add(TrainCarType.PassengerBlue, 12.35f);
+            trainCarBounds.Add(TrainCarType.AutorackRed, new TrainCarBoundsCorrection(-0.5f, 0f));
+            trainCarBounds.Add(TrainCarType.AutorackBlue, new TrainCarBoundsCorrection(-0.5f, 0f));
+            trainCarBounds.Add(TrainCarType.AutorackGreen, new TrainCarBoundsCorrection(-0.5f, 0f));
+            trainCarBounds.Add(TrainCarType.AutorackYellow, new TrainCarBoundsCorrection(-0.5f, 0f));
 
-            trainCarLength.Add(TrainCarType.TankOrange, 7.22f);
-            trainCarLength.Add(TrainCarType.TankWhite, 7.22f);
-            trainCarLength.Add(TrainCarType.TankYellow, 7.22f);
-            trainCarLength.Add(TrainCarType.TankChrome, 7.22f);
+            trainCarBounds.Add(TrainCarType.TankOrange, new TrainCarBoundsCorrection(-0.5f, -0.03f));
+            trainCarBounds.Add(TrainCarType.TankWhite, new TrainCarBoundsCorrection(-0.5f, -0.03f));
+            trainCarBounds.Add(TrainCarType.TankYellow, new TrainCarBoundsCorrection(-0.5f, -0.03f));
+            trainCarBounds.Add(TrainCarType.TankChrome, new TrainCarBoundsCorrection(-0.5f, -0.03f));
 
-            trainCarLength.Add(TrainCarType.BoxcarBrown, 7.076f);
-            trainCarLength.Add(TrainCarType.BoxcarGreen, 7.076f);
-            trainCarLength.Add(TrainCarType.BoxcarPink, 7.076f);
-            trainCarLength.Add(TrainCarType.BoxcarRed, 7.076f);
+            trainCarBounds.Add(TrainCarType.BoxcarBrown, new TrainCarBoundsCorrection(-0.55f, 0f));
+            trainCarBounds.Add(TrainCarType.BoxcarGreen, new TrainCarBoundsCorrection(-0.55f, 0f));
+            trainCarBounds.Add(TrainCarType.BoxcarPink, new TrainCarBoundsCorrection(-0.55f, 0f));
+            trainCarBounds.Add(TrainCarType.BoxcarRed, new TrainCarBoundsCorrection(-0.55f, 0f));
 
-            trainCarLength.Add(TrainCarType.HopperBrown, 8.975f);
-            trainCarLength.Add(TrainCarType.HopperTeal, 8.975f);
-            trainCarLength.Add(TrainCarType.HopperYellow, 8.975f);
+            trainCarBounds.Add(TrainCarType.HopperBrown, new TrainCarBoundsCorrection(-0.5f, 0f));
+            trainCarBounds.Add(TrainCarType.HopperTeal, new TrainCarBoundsCorrection(-0.5f, 0f));
+            trainCarBounds.Add(TrainCarType.HopperYellow, new TrainCarBoundsCorrection(-0.5f, 0f));
 
-            trainCarLength.Add(TrainCarType.FlatbedEmpty, 9.0f);
-            trainCarLength.Add(TrainCarType.FlatbedStakes, 9.0f);
+            trainCarBounds.Add(TrainCarType.FlatbedEmpty, new TrainCarBoundsCorrection(-0.55f, 0f));
+            trainCarBounds.Add(TrainCarType.FlatbedStakes, new TrainCarBoundsCorrection(-0.55f, 0f));
 
-            trainCarLength.Add(TrainCarType.RefrigeratorWhite, 7.06f);
+            trainCarBounds.Add(TrainCarType.RefrigeratorWhite, new TrainCarBoundsCorrection(-0.85f, 0f));
 
-            trainCarLength.Add(TrainCarType.LocoShunter, 3.72f);
-
-            //trainCarLength.Add(TrainCarType.Tender, 4f);
-            //trainCarLength.Add(TrainCarType.TenderBlue, 4f);
-        }
-
-        static void FillTrainCarCenterOffsets()
-        {
-            trainCarCenterOffset.Add(TrainCarType.LocoShunter, 0.01f);
-            trainCarCenterOffset.Add(TrainCarType.RefrigeratorWhite, 0.03f);
-
-            trainCarCenterOffset.Add(TrainCarType.BoxcarBrown, 0.04f);
-            trainCarCenterOffset.Add(TrainCarType.BoxcarGreen, 0.04f);
-            trainCarCenterOffset.Add(TrainCarType.BoxcarPink, 0.04f);
-            trainCarCenterOffset.Add(TrainCarType.BoxcarRed, 0.04f);
-        }
-
-        static void ReduceTrainCarBoxSize()
-        {
-            foreach (TrainCarType carType in (TrainCarType[])Enum.GetValues(typeof(TrainCarType)))
-            {
-                var carPrefab = CarTypes.GetCarPrefab(carType);
-
-                if (!carPrefab || !trainCarLength.ContainsKey(carType)) continue;
-
-                var trainCar = carPrefab.GetComponent<TrainCar>();
-                var root = trainCar.transform.Find("[colliders]");
-                var collision = root?.Find("[collision]");
-                var componentsInChildren = collision.GetComponents<BoxCollider>();
-
-                for (int i = 0; i < componentsInChildren.Length; i++)
-                {
-                    var boxCollider = componentsInChildren[i];
-                    var boxColliderSize = boxCollider.size;
-                    var boxColliderCenter = boxCollider.center;
-
-                    boxColliderSize.z = trainCarLength[carType] * 2f;
-                    boxCollider.size = boxColliderSize;
-
-                    if (trainCarCenterOffset.ContainsKey(carType))
-                    {
-                        boxColliderCenter.z += trainCarCenterOffset[carType];
-                        boxCollider.center = boxColliderCenter;
-                    }
-                }
-            }
+            trainCarBounds.Add(TrainCarType.LocoShunter, new TrainCarBoundsCorrection(-0.5f, 0f));
         }
     }
-
-    [HarmonyPatch(typeof(TrainCarColliders), "GetCollisionBounds")]
-    class TrainCarColliders_GetCollisionBounds_Patch
+    
+    [HarmonyPatch(typeof(TrainCar), "Awake")]
+    class TrainCar_Awake_Patch
     {
-        static void Postfix(ref Bounds __result, TrainCar car)
+        static void Prefix(TrainCar __instance)
         {
-            if (Main.trainCarLength.ContainsKey(car.carType))
+            var root = __instance.transform.Find("[colliders]");
+            var collision = root?.Find("[collision]");
+            
+            var componentsInChildren = collision.GetComponents<BoxCollider>();
+            var lastCollider = componentsInChildren[componentsInChildren.Length - 1];
+            var boxCollider = lastCollider;
+
+            if (Main.trainCarBounds.ContainsKey(__instance.carType))
             {
-                var extents = __result.extents;
-                var center = __result.center;
+                var trainCarBounds = Main.trainCarBounds[__instance.carType];
 
-                __result.extents = new Vector3(extents.x, extents.y, Main.trainCarLength[car.carType]);
+                boxCollider.size = new Vector3(boxCollider.size.x, boxCollider.size.y, boxCollider.size.z + trainCarBounds.size);
+                boxCollider.center = new Vector3(boxCollider.center.x, boxCollider.center.y, 0f);
 
-                if (Main.trainCarCenterOffset.ContainsKey(car.carType))
-                {
-                    __result.center = new Vector3(center.x, center.y, Main.trainCarCenterOffset[car.carType]);
-                }
+                var collisionPosition = collision.transform.localPosition;
+                collisionPosition.z = 0f;
+                collision.transform.localPosition = collisionPosition;
             }
         }
     }
 
-    //[HarmonyPatch(typeof(YardTracksOrganizer), "GetSeparationLengthBetweenCars")]
-    //class YardTracksOrganizer_GetSeparationLengthBetweenCars_Patch
-    //{
-    //    static void Postfix(ref float __result, int numOfCars)
-    //    {
-    //        __result = 0.01f * (float)(numOfCars + 1);
-    //    }
-    //}
+    [HarmonyPatch(typeof(DecouplerDeviceLogic))]
+    [HarmonyPatch("Couple")]
+    public class DecouplerDeviceLogic_Couple_Patcher
+    {
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            var code = new List<CodeInstruction>(instructions);
 
-    //[HarmonyPatch(typeof(CarSpawner))]
-    //[HarmonyPatch("SpawnCarTypesOnTrack")]
-    //public class CarSpawner_SpawnCarTypesOnTrack_Patcher
-    //{
-    //    static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-    //    {
-    //        var code = new List<CodeInstruction>(instructions);
+            for (int i = 0; i < code.Count - 1; i++)
+            {
+                if (code[i].opcode == OpCodes.Ldc_R4 && code[i].operand is float f && f >= 0.99f && f < 1.01f)
+                {
+                    code[i].operand = 0.5f;
+                }
+            }
 
-    //        for (int i = 0; i < code.Count - 1; i++)
-    //        {
-    //            if (code[i].opcode == OpCodes.Ldc_R8 && code[i].operand is double f && f >= 0.3 && f < 0.31)
-    //            {
-    //                code[i].operand = (double)0.01f;
-    //            }
-    //        }
+            return code;
+        }
+    }
 
-    //        return code;
-    //    }
-    //}
+    [HarmonyPatch(typeof(DecouplerTextRowDriver))]
+    [HarmonyPatch("UpdateDisplay")]
+    public class DecouplerTextRowDriver_UpdateDisplay_Patcher
+    {
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            var code = new List<CodeInstruction>(instructions);
 
-    //[HarmonyPatch(typeof(CarSpawner))]
-    //[HarmonyPatch("GetUninitializedSpawnData")]
-    //public class CarSpawner_GetUninitializedSpawnData_Patcher
-    //{
-    //    static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-    //    {
-    //        var code = new List<CodeInstruction>(instructions);
+            for (int i = 0; i < code.Count - 1; i++)
+            {
+                if (code[i].opcode == OpCodes.Ldc_R4 && code[i].operand is float f && f >= 0.99f && f < 1.01f)
+                {
+                    code[i].operand = 0.5f;
+                }
+            }
 
-    //        for (int i = 0; i < code.Count - 1; i++)
-    //        {
-    //            if (code[i].opcode == OpCodes.Ldc_R4 && code[i].operand is float f && f >= 0.01f && f < 0.11f)
-    //            {
-    //                code[i].operand = 0.01f;
-    //            }
-    //        }
-
-    //        return code;
-    //    }
-    //}
+            return code;
+        }
+    }
 
     [HarmonyPatch(typeof(Coupler), "CoupleTo")]
     class Coupler_CoupleTo_Patch
@@ -211,7 +168,7 @@ namespace CouplersOverhaulMod
         static void Prefix(Coupler __instance)
         {
             var position = __instance.transform.localPosition;
-            
+
             float coef = 0.37f;
 
             if (__instance.train.carType == TrainCarType.LocoShunter)
@@ -231,6 +188,22 @@ namespace CouplersOverhaulMod
                 coef -= 0.7f;
             }
 
+            if ((__instance.train.carType == TrainCarType.Tender || __instance.train.carType == TrainCarType.TenderBlue) &&
+    __instance.train.rearCoupler.Equals(__instance))
+            {
+                coef = 0.2f;
+            }
+
+            if (__instance.train.carType == TrainCarType.RefrigeratorWhite)
+            {
+                coef = 0.4f;
+            }
+
+            if (__instance.train.carType == TrainCarType.BoxcarBrown || __instance.train.carType == TrainCarType.BoxcarGreen || __instance.train.carType == TrainCarType.BoxcarPink || __instance.train.carType == TrainCarType.BoxcarRed)
+            {
+                coef = 0.4f;
+            }
+
             if (__instance.train.frontCoupler.Equals(__instance))
             {
                 position.z -= coef;
@@ -243,82 +216,30 @@ namespace CouplersOverhaulMod
             __instance.transform.localPosition = position;
 
             __instance.gameObject.AddComponent<CouplerCustom>();
-
-            //GameObject go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            //go.transform.parent = __instance.transform;
-            //go.transform.localPosition = Vector3.zero;
-            //go.transform.localScale *= 0.25f;
-
-            //if (__instance.train.frontCoupler.Equals(__instance))
-            //{
-            //    go.GetComponent<Renderer>().material.color = new Color(1, 0, 0, 1);
-            //}
         }
     }
 
     [HarmonyPatch(typeof(Coupler), "CreateJoint")]
     class Coupler_CreateJoint_Patch
     {
+        static Coupler instance;
+
         static void Postfix(Coupler __instance, ref ConfigurableJoint __result)
         {
+            instance = __instance;
+
             SoftJointLimit softJointLimit = new SoftJointLimit();
 
             if (__instance.train.carType == TrainCarType.LocoSteamHeavy && __instance.coupledTo.train.carType == TrainCarType.Tender ||
                 __instance.train.carType == TrainCarType.Tender && __instance.coupledTo.train.carType == TrainCarType.LocoSteamHeavy)
             {
                 softJointLimit.limit = 0.05f;
+                __result.linearLimit = softJointLimit;
             }
             else
             {
-                softJointLimit.limit = 0.25f;
+                instance.StartCoroutine(__instance.GetComponent<CouplerCustom>().ReduceLimit(0.25f));
             }
-
-            __result.angularXMotion = ConfigurableJointMotion.Free;
-            __result.angularYMotion = ConfigurableJointMotion.Free;
-            __result.angularZMotion = ConfigurableJointMotion.Free;
-            __result.linearLimit = softJointLimit;
-            __result.enableCollision = false;
-            __result.breakForce = 1E+08f;
-        }
-    }
-
-    [HarmonyPatch(typeof(DecouplerDeviceLogic))]
-    [HarmonyPatch("Couple")]
-    public class DecouplerDeviceLogic_Couple_Patcher
-    {
-        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-        {
-            var code = new List<CodeInstruction>(instructions);
-
-            for (int i = 0; i < code.Count - 1; i++)
-            {
-                if (code[i].opcode == OpCodes.Ldc_R4 && code[i].operand is float f && f >= 0.99f && f < 1.01f)
-                {
-                    code[i].operand = 0.4f;
-                }
-            }
-
-            return code;
-        }
-    }
-
-    [HarmonyPatch(typeof(DecouplerTextRowDriver))]
-    [HarmonyPatch("UpdateDisplay")]
-    public class DecouplerTextRowDriver_UpdateDisplay_Patcher
-    {
-        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-        {
-            var code = new List<CodeInstruction>(instructions);
-
-            for (int i = 0; i < code.Count - 1; i++)
-            {
-                if (code[i].opcode == OpCodes.Ldc_R4 && code[i].operand is float f && f >= 0.99f && f < 1.01f)
-                {
-                    code[i].operand = 0.4f;
-                }
-            }
-
-            return code;
         }
     }
 
@@ -343,6 +264,10 @@ namespace CouplersOverhaulMod
 
         Rigidbody trainRigidbody;
         Rigidbody otherTrainRigidbody;
+
+        bool reduceDistance = false;
+        float currentDistance;
+        float targetDistance;
 
         void Awake()
         {
@@ -456,6 +381,38 @@ namespace CouplersOverhaulMod
             coupledToCustom = null;
         }
 
+        public IEnumerator<object> ReduceLimit(float target)
+        {
+            yield return (object)WaitFor.SecondsRealtime(1.5f);
+
+            reduceDistance = true;
+            currentDistance = coupler.train.gameObject.GetComponent<ConfigurableJoint>().linearLimit.limit;
+            targetDistance = target;
+        }
+
+        void ReduceDistance()
+        {
+            if (reduceDistance)
+            {
+                var cj = coupler.train.gameObject.GetComponent<ConfigurableJoint>();
+
+                if (cj)
+                {
+                    currentDistance -= 0.005f;
+
+                    if (currentDistance <= targetDistance)
+                    {
+                        reduceDistance = false;
+                        currentDistance = targetDistance;
+                    }
+
+                    SoftJointLimit softJointLimit = new SoftJointLimit();
+                    softJointLimit.limit = currentDistance;
+                    cj.linearLimit = softJointLimit;
+                }
+            }
+        }
+
         void FixedUpdate()
         {
             if (!coupler) return;
@@ -463,9 +420,13 @@ namespace CouplersOverhaulMod
             if (!CouplerAnchor) return;
             if (!coupledToCustom) return;
             if (!coupledToCustom.CouplerAnchor) return;
+            if (coupler.train.derailed) return;
+            if (coupler.coupledTo.train.derailed) return;
 
-            float power = 50000f;
-            float damper = 15000f;
+            ReduceDistance();
+
+            float power = 150000f;
+            float damper = 5000f;
             float coef = 0.4f;
 
             float distance = Vector3.Distance(CouplerAnchor.transform.position, coupledToCustom.CouplerAnchor.transform.position);
@@ -490,12 +451,12 @@ namespace CouplersOverhaulMod
             {
                 var totalForce = Mathf.Max(0, moveForce * power - velocity * damper);
 
-                ApplyBufferForce(totalForce * 0.5f, coupler);
-                ApplyBufferForce(totalForce * 0.5f, coupler.coupledTo);
+                ApplyTrainForce(totalForce * 0.5f, coupler);
+                ApplyTrainForce(totalForce * 0.5f, coupler.coupledTo);
             }
         }
 
-        static void MoveBuffer(Transform buffer, Vector3 position, float distance)
+        void MoveBuffer(Transform buffer, Vector3 position, float distance)
         {
             if (!buffer) return;
 
@@ -505,20 +466,16 @@ namespace CouplersOverhaulMod
             buffer.transform.localPosition = pos;
         }
 
-        static void ApplyBufferForce(float force, Coupler coupler)
+        void ApplyTrainForce(float force, Coupler coupler)
         {
-            var bogies = coupler.train.Bogies;
-            var direction = 1f;
+            var dir = 1f;
 
             if (coupler.train.frontCoupler.Equals(coupler))
             {
-                direction = -1f;
+                dir = -1f;
             }
 
-            for (var i = 0; i < bogies.Length; i++)
-            {
-                bogies[i].ApplyForce(force * direction);
-            }
+            coupler.train.rb.AddForce(coupler.train.transform.forward * force * dir);
         }
     }
 }
