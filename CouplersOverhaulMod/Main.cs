@@ -46,9 +46,10 @@ namespace CouplersOverhaulMod
             bufferDistanceDictionary.Add(TrainCarType.BoxcarBrown, new float[] { 0.05f, 0.05f });
             bufferDistanceDictionary.Add(TrainCarType.RefrigeratorWhite, new float[] { 0.05f, 0.05f });
 
-            trainCarBounds.Add(TrainCarType.RefrigeratorWhite, new TrainCarBoundsCorrection(-0.3f, 0f));
+            trainCarBounds.Add(TrainCarType.RefrigeratorWhite, new TrainCarBoundsCorrection(-0.4f, 0f));
         }
     }
+
 
     [HarmonyPatch(typeof(TrainCar), "Awake")]
     class TrainCar_Awake_Patch
@@ -209,28 +210,6 @@ namespace CouplersOverhaulMod
         }
     }
 
-    //[HarmonyPatch(typeof(TrainCar), "Start")]
-    //class TrainCar_Start_Patch
-    //{
-    //    static void Postfix(TrainCar __instance)
-    //    {
-    //        var collision = __instance.transform.Find("[collision]");
-    //        var colliders = collision.GetComponents<BoxCollider>();
-
-    //        for (var i = 0; i < colliders.Length; i++)
-    //        {
-    //            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-    //            GameObject.Destroy(go.GetComponent<BoxCollider>());
-    //            go.transform.parent = collision.transform;
-    //            go.transform.localPosition = colliders[i].center;
-    //            go.transform.localScale = colliders[i].size;
-    //            go.transform.localRotation = Quaternion.identity;
-    //            go.GetComponent<MeshRenderer>().material.shader = Shader.Find("Unlit/TransparentColor");
-    //            go.GetComponent<Renderer>().material.color = new Color(0f, 0f, 1f, 0.3f);
-    //        }
-    //    }
-    //}
-
     class CouplerCustom : MonoBehaviour
     {
         Coupler coupler;
@@ -361,10 +340,10 @@ namespace CouplersOverhaulMod
 
         public IEnumerator<object> ReduceLimit(float target, ConfigurableJoint joint)
         {
-            yield return (object)WaitFor.SecondsRealtime(1f);
+            yield return (object)WaitFor.SecondsRealtime(1.5f);
 
             reduceDistance = true;
-            currentDistance = joint.linearLimit.limit;
+            currentDistance = 1f;
             targetDistance = target;
             jointToReduce = joint;
         }
@@ -401,8 +380,8 @@ namespace CouplersOverhaulMod
 
             if (!coupledToCustom || !otherTrainRigidbody || !coupledToCustom.CouplerAnchor) return;
 
-            float power = 150000f;
-            float damper = 5000f;
+            float spring = 200000f;
+            float damper = 25000f;
             float coef = 0.4f;
 
             float distance = Vector3.Distance(CouplerAnchor.transform.position, coupledToCustom.CouplerAnchor.transform.position);
@@ -425,7 +404,7 @@ namespace CouplersOverhaulMod
 
             if (moveForce > 0.01f)
             {
-                var totalForce = Mathf.Max(0, moveForce * power - velocity * damper);
+                var totalForce = Mathf.Max(0, moveForce * spring + velocity * damper);
 
                 ApplyTrainForce(totalForce * 0.5f, coupler);
                 ApplyTrainForce(totalForce * 0.5f, coupler.coupledTo);
