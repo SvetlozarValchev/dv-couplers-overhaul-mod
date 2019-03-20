@@ -45,6 +45,34 @@ namespace CouplersOverhaulMod
             bufferDistanceDictionary.Add(TrainCarType.BoxcarGreen, new float[] { 0.05f, 0.05f });
             bufferDistanceDictionary.Add(TrainCarType.BoxcarBrown, new float[] { 0.05f, 0.05f });
             bufferDistanceDictionary.Add(TrainCarType.RefrigeratorWhite, new float[] { 0.05f, 0.05f });
+
+            trainCarBounds.Add(TrainCarType.RefrigeratorWhite, new TrainCarBoundsCorrection(-0.3f, 0f));
+        }
+    }
+
+    [HarmonyPatch(typeof(TrainCar), "Awake")]
+    class TrainCar_Awake_Patch
+    {
+        static void Prefix(TrainCar __instance)
+        {
+            var root = __instance.transform.Find("[colliders]");
+            var collision = root?.Find("[collision]");
+
+            var componentsInChildren = collision.GetComponents<BoxCollider>();
+            var lastCollider = componentsInChildren[componentsInChildren.Length - 1];
+            var boxCollider = lastCollider;
+
+            if (Main.trainCarBounds.ContainsKey(__instance.carType))
+            {
+                var trainCarBounds = Main.trainCarBounds[__instance.carType];
+
+                boxCollider.size = new Vector3(boxCollider.size.x, boxCollider.size.y, boxCollider.size.z + trainCarBounds.size);
+                boxCollider.center = new Vector3(boxCollider.center.x, boxCollider.center.y, 0f);
+
+                var collisionPosition = collision.transform.localPosition;
+                collisionPosition.z = 0f;
+                collision.transform.localPosition = collisionPosition;
+            }
         }
     }
 
@@ -180,6 +208,28 @@ namespace CouplersOverhaulMod
             __result.enableCollision = false;
         }
     }
+
+    //[HarmonyPatch(typeof(TrainCar), "Start")]
+    //class TrainCar_Start_Patch
+    //{
+    //    static void Postfix(TrainCar __instance)
+    //    {
+    //        var collision = __instance.transform.Find("[collision]");
+    //        var colliders = collision.GetComponents<BoxCollider>();
+
+    //        for (var i = 0; i < colliders.Length; i++)
+    //        {
+    //            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+    //            GameObject.Destroy(go.GetComponent<BoxCollider>());
+    //            go.transform.parent = collision.transform;
+    //            go.transform.localPosition = colliders[i].center;
+    //            go.transform.localScale = colliders[i].size;
+    //            go.transform.localRotation = Quaternion.identity;
+    //            go.GetComponent<MeshRenderer>().material.shader = Shader.Find("Unlit/TransparentColor");
+    //            go.GetComponent<Renderer>().material.color = new Color(0f, 0f, 1f, 0.3f);
+    //        }
+    //    }
+    //}
 
     class CouplerCustom : MonoBehaviour
     {
