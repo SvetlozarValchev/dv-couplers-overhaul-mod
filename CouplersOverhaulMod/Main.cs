@@ -60,8 +60,13 @@ namespace CouplersOverhaulMod
             var collision = root?.Find("[collision]");
 
             var componentsInChildren = collision.GetComponents<BoxCollider>();
-            var lastCollider = componentsInChildren[componentsInChildren.Length - 1];
-            var boxCollider = lastCollider;
+
+            if(componentsInChildren.Length == 0)
+            {
+                return;
+            }
+
+            var boxCollider = componentsInChildren[componentsInChildren.Length - 1];
 
             if (Main.trainCarBounds.ContainsKey(__instance.carType))
             {
