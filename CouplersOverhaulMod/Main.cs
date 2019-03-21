@@ -212,6 +212,33 @@ namespace CouplersOverhaulMod
             }
 
             __result.enableCollision = false;
+
+            if (instance.train.carType != TrainCarType.Tender && instance.train.carType != TrainCarType.TenderBlue)
+            {
+                foreach (Transform child in __instance.train.transform)
+                {
+                    if (child.gameObject.name == "[collision]")
+                    {
+                        child.gameObject.SetActive(false);
+                    }
+                }
+
+                instance.StartCoroutine(ResetCollisionState(__instance.train));
+            }
+        }
+
+        static public IEnumerator<object> ResetCollisionState(TrainCar train)
+        {
+            yield return null;
+
+            // Reset collision layers for joint to know them (weird Unity bug?)
+            foreach (Transform child in train.transform)
+            {
+                if (child.gameObject.name == "[collision]")
+                {
+                    child.gameObject.SetActive(true);
+                }
+            }
         }
     }
 
