@@ -203,8 +203,7 @@ namespace CouplersOverhaulMod
             if (__instance.train.carType == TrainCarType.LocoSteamHeavy && __instance.coupledTo.train.carType == TrainCarType.Tender ||
                 __instance.train.carType == TrainCarType.Tender && __instance.coupledTo.train.carType == TrainCarType.LocoSteamHeavy)
             {
-                softJointLimit.limit = 0.05f;
-                __result.linearLimit = softJointLimit;
+                instance.StartCoroutine(__instance.GetComponent<CouplerCustom>().ReduceLimit(0.03f, __result));
             }
             else
             {
